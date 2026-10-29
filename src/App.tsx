@@ -41,7 +41,7 @@ import {
 import { loadState, saveAttempt, clearState, markStudied } from "@/lib/storage";
 import { selectQuiz, shuffledOptions } from "@/lib/quiz";
 import { cn } from "@/lib/utils";
-import type { AppState, Question } from "@/types";
+import type { AppState, Question, QuestionVisual } from "@/types";
 
 type View = "dashboard" | "lessons" | "lesson" | "quiz" | "review" | "history";
 type Discipline = (typeof disciplines)[DisciplineId];
@@ -388,8 +388,14 @@ function DisciplineCard({
     (l) => state.studied[`${discipline.id}:${l.id}`],
   ).length;
   return (
-    <Card className="group overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-primary/60 hover:shadow-[0_24px_70px_-38px_var(--primary)]">
-      <CardHeader>
+    <Card className="group relative overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-primary/60 hover:shadow-[0_24px_70px_-38px_var(--primary)]">
+      <img
+        src={`${import.meta.env.BASE_URL}${discipline.mascot.image}`}
+        alt={discipline.mascot.alt}
+        className="pointer-events-none absolute right-1 top-12 size-28 object-contain opacity-80 transition duration-500 group-hover:scale-105 group-hover:opacity-100 sm:right-3 sm:size-36"
+        loading="lazy"
+      />
+      <CardHeader className="relative pr-24 sm:pr-36">
         <div className="mb-5 flex items-center justify-between">
           <span className="grid size-11 place-items-center rounded-full border border-primary/35 bg-primary/10 font-mono text-xs text-highlight">
             {discipline.code}
@@ -398,6 +404,9 @@ function DisciplineCard({
             {discipline.questions.length} questões
           </span>
         </div>
+        <p className="font-mono text-[10px] uppercase tracking-[.16em] text-highlight">
+          {discipline.mascot.name} · {discipline.mascot.animal}
+        </p>
         <CardTitle className="text-2xl">{discipline.name}</CardTitle>
         <CardDescription className="leading-6">
           {discipline.description}
@@ -741,6 +750,12 @@ function LessonDetail({
             </p>
           </div>
           <div className="border-l border-border pl-5">
+            <img
+              src={`${import.meta.env.BASE_URL}${discipline.mascot.image}`}
+              alt=""
+              className="mx-auto mb-2 hidden size-24 object-contain lg:block"
+              loading="lazy"
+            />
             <p className="text-xs uppercase tracking-[.14em] text-muted-foreground">
               Progresso nas questões
             </p>
@@ -974,6 +989,11 @@ function Quiz({
             {q.prompt}
           </CardTitle>
         </CardHeader>
+        {q.visual && (
+          <div className="border-b border-border px-5 py-5">
+            <QuestionVisualPanel visual={q.visual} />
+          </div>
+        )}
         <CardContent className="pt-5">
           <fieldset className="flex flex-col gap-3">
             <legend className="sr-only">Alternativas</legend>
@@ -1136,6 +1156,11 @@ function QuizResult({
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
                   {d.q.explanation}
                 </p>
+                {d.q.visual && (
+                  <div className="mt-4">
+                    <QuestionVisualPanel visual={d.q.visual} compact />
+                  </div>
+                )}
                 <QuestionReference question={d.q} />
               </CardContent>
             </Card>
@@ -1221,6 +1246,120 @@ function QuestionReference({ question }: { question: Question }) {
     </div>
   );
 }
+
+function QuestionVisualPanel({
+  visual,
+  compact = false,
+}: {
+  visual: QuestionVisual;
+  compact?: boolean;
+}) {
+  return (
+    <figure
+      className={cn(
+        "overflow-hidden rounded-xl border border-border bg-background/70",
+        compact && "rounded-lg",
+      )}
+    >
+      <figcaption className="flex items-center justify-between border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
+        <span>{visual.caption}</span>
+        <span className="font-mono uppercase text-highlight">
+          {visual.type}
+        </span>
+      </figcaption>
+      {visual.type === "code" && (
+        <div className="overflow-x-auto p-4 font-mono text-xs leading-6 sm:text-sm">
+          <div className="min-w-max">
+            {visual.content.split("\n").map((line, index) => (
+              <div
+                key={`${index}-${line}`}
+                className={cn(
+                  "grid grid-cols-[2rem_1fr] rounded px-2",
+                  visual.highlightLines?.includes(index + 1) &&
+                    "bg-primary/10 text-highlight",
+                )}
+              >
+                <span className="select-none text-muted-foreground/55">
+                  {index + 1}
+                </span>
+                <code className="whitespace-pre text-foreground">
+                  {line || " "}
+                </code>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {visual.type === "table" && (
+        <div className="overflow-x-auto p-4">
+          <table className="w-full min-w-[420px] border-collapse text-left text-xs sm:text-sm">
+            <thead>
+              <tr>
+                {visual.headers.map((header) => (
+                  <th
+                    key={header}
+                    className="border border-border bg-muted px-3 py-2 font-mono text-highlight"
+                  >
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {visual.rows.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {row.map((cell, cellIndex) => (
+                    <td
+                      key={`${cellIndex}-${cell}`}
+                      className="border border-border px-3 py-2"
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {visual.type === "diagram" && (
+        <div className="flex min-w-max items-center justify-center gap-2 overflow-x-auto p-5 sm:gap-3">
+          {visual.nodes.map((node, index) => (
+            <div key={node.id} className="contents">
+              {index > 0 && (
+                <div className="flex min-w-14 flex-col items-center gap-1 text-center">
+                  <span className="font-mono text-[10px] text-highlight">
+                    {visual.edges[index - 1]?.label ?? "→"}
+                  </span>
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                </div>
+              )}
+              <div className="min-w-32 rounded-lg border border-border bg-card px-3 py-3 text-center shadow-sm">
+                <p className="font-mono text-xs font-semibold text-highlight">
+                  {node.label}
+                </p>
+                {node.detail && (
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {node.detail}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {visual.type === "image" && (
+        <img
+          src={visual.src}
+          alt={visual.alt}
+          className="mx-auto max-h-80 w-full object-contain p-4"
+          loading="lazy"
+        />
+      )}
+    </figure>
+  );
+}
+
 function HistoryView({ state, reset }: { state: AppState; reset: () => void }) {
   return (
     <div>

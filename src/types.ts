@@ -1,5 +1,31 @@
 export type Difficulty = "fácil" | "média" | "difícil";
 export type QuestionKind = "conceitual" | "prática" | "sql" | "código" | "erro";
+export type QuestionVisual =
+  | {
+      type: "code";
+      language: string;
+      caption: string;
+      content: string;
+      highlightLines?: number[];
+    }
+  | {
+      type: "diagram";
+      caption: string;
+      nodes: { id: string; label: string; detail?: string }[];
+      edges: { from: string; to: string; label?: string }[];
+    }
+  | {
+      type: "table";
+      caption: string;
+      headers: string[];
+      rows: string[][];
+    }
+  | {
+      type: "image";
+      caption: string;
+      src: string;
+      alt: string;
+    };
 export interface Question {
   id: string;
   lesson: string;
@@ -15,6 +41,7 @@ export interface Question {
   familyId?: string;
   reference?: { label: string; url: string };
   origin?: string;
+  visual?: QuestionVisual;
 }
 export interface AttemptAnswer {
   questionId: string;

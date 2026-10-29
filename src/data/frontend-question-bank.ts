@@ -1,4 +1,5 @@
 import type { Difficulty, Question, QuestionKind } from "@/types";
+import { questionVisuals } from "./question-visuals";
 
 // Exercícios autorais complementares: as páginas indicam o assunto na aula,
 // e a referência externa permite conferir a regra técnica. Não são questões do professor.
@@ -152,7 +153,7 @@ function q(
   };
 }
 
-export const frontendQuestionBank: Question[] = [
+const frontendQuestions: Question[] = [
   // Aula 01 — fundamentos, documento, texto, listas, tabelas e recursos.
   q(
     1,
@@ -2109,6 +2110,11 @@ export const frontendQuestionBank: Question[] = [
     "fetch",
   ),
 ];
+
+export const frontendQuestionBank = frontendQuestions.map((question) => ({
+  ...question,
+  visual: questionVisuals[question.id],
+}));
 
 export const frontendBankStats = {
   questions: frontendQuestionBank.length,

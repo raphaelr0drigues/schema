@@ -68,9 +68,28 @@ describe("quiz", () => {
       expect(quiz, lesson.id).toHaveLength(10);
       expect(
         quiz.every(
-          (q) => frontendQuestionBank.includes(q) && q.lesson === lesson.id,
+          (q) =>
+            frontendQuestionBank.some((item) => item.id === q.id) &&
+            q.lesson === lesson.id,
         ),
         lesson.id,
+      ).toBe(true);
+    }
+  });
+  it("oferece 20 questões visuais validadas em cada disciplina", () => {
+    for (const questionSet of [questionBank, frontendQuestionBank]) {
+      const visualQuestions = questionSet.filter((question) => question.visual);
+      expect(visualQuestions).toHaveLength(20);
+      expect(
+        visualQuestions.every((question) => question.visual?.caption),
+      ).toBe(true);
+      expect(
+        visualQuestions.some((question) => question.visual?.type === "code"),
+      ).toBe(true);
+      expect(
+        visualQuestions.some((question) =>
+          ["diagram", "table"].includes(question.visual?.type ?? ""),
+        ),
       ).toBe(true);
     }
   });

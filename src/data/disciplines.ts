@@ -12,6 +12,12 @@ export const disciplines = {
     code: "MDB",
     description:
       "Do modelo conceitual ao SQL, com integridade, normalização e consultas.",
+    mascot: {
+      name: "Nilo",
+      animal: "Golfinho",
+      image: "/schema/mascots/mdb-dolphin.webp",
+      alt: "Nilo, o golfinho mascote de Modelagem de Banco de Dados",
+    },
     lessons: lessonContents,
     questions: questionBank,
   },
@@ -22,6 +28,12 @@ export const disciplines = {
     code: "FEW",
     description:
       "HTML, CSS, responsividade, Git, JavaScript, DOM e consumo de dados.",
+    mascot: {
+      name: "Pixel",
+      animal: "Camaleão",
+      image: "/schema/mascots/frontend-chameleon.webp",
+      alt: "Pixel, o camaleão mascote de Desenvolvimento Front-End",
+    },
     lessons: frontendLessonContents,
     questions: frontendQuestionBank,
   },
