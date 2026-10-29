@@ -15,7 +15,7 @@ export const disciplines = {
     mascot: {
       name: "Nilo",
       animal: "Golfinho",
-      image: "/schema/mascots/mdb-dolphin.webp",
+      image: "mascots/mdb-dolphin.webp",
       alt: "Nilo, o golfinho mascote de Modelagem de Banco de Dados",
     },
     lessons: lessonContents,
@@ -31,7 +31,7 @@ export const disciplines = {
     mascot: {
       name: "Pixel",
       animal: "Camaleão",
-      image: "/schema/mascots/frontend-chameleon.webp",
+      image: "mascots/frontend-chameleon.webp",
       alt: "Pixel, o camaleão mascote de Desenvolvimento Front-End",
     },
     lessons: frontendLessonContents,
