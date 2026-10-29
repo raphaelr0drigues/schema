@@ -1,4 +1,5 @@
 import type{Difficulty,Question,QuestionKind}from'@/types'
+import {mdbExtraQuestions} from './mdb-extra-questions'
 
 type Seed={lesson:string;page:number;topic:string;difficulty:Difficulty;kind:QuestionKind;prompt:string;correct:string;wrong:[string,string,string];explanation:string}
 const s=(lesson:string,page:number,topic:string,difficulty:Difficulty,kind:QuestionKind,prompt:string,correct:string,wrong:[string,string,string],explanation:string):Seed=>({lesson,page,topic,difficulty,kind,prompt,correct,wrong,explanation})
@@ -89,15 +90,10 @@ s('Aula 09',3,'DDL, DML e DQL','média','conceitual','Qual grupo associa correta
 s('Aula 09',17,'Regra de domínio','média','prática','No cenário hospitalar, qual constraint impede dois médicos de usarem o mesmo CRM?','UNIQUE.',['ORDER BY.','GROUP BY.','DEFAULT NULL.'],'UNIQUE protege a exclusividade de um valor de negócio mesmo quando ele não é a chave primária da tabela.'),
 ]
 
-const frames=[
- (x:Seed)=>x.prompt,
- (x:Seed)=>`Em uma revisão sobre ${x.topic}, assinale a alternativa correta: ${x.prompt}`,
-]
-
-export const questionBank:Question[]=seeds.flatMap((x,seedIndex)=>frames.map((frame,variant)=>({
- id:`q-${String(seedIndex+1).padStart(3,'0')}-${variant+1}`,
- lesson:x.lesson,page:x.page,topic:x.topic,difficulty:x.difficulty,kind:x.kind,prompt:frame(x),
+export const questionBank:Question[]=[...seeds.map((x,seedIndex)=>({
+ id:`q-${String(seedIndex+1).padStart(3,'0')}-1`,familyId:x.lesson==='Aula 03'&&(x.topic==='Posição da FK'||x.prompt.includes('onde fica ID_Cliente'))?'mdb-fk-lado-n':`mdb-${seedIndex+1}`,
+ lesson:x.lesson,page:x.page,topic:x.topic,difficulty:x.difficulty,kind:x.kind,prompt:x.prompt,
  options:[x.correct,...x.wrong],correct:0,explanation:x.explanation,source:`${x.lesson}, p. ${x.page}`,
-})))
+})).filter(q=>!(q.lesson==='Aula 03'&&q.topic==='Posição da FK')),...mdbExtraQuestions]
 
-export const bankStats={questions:questionBank.length,seeds:seeds.length,lessons:new Set(questionBank.map(q=>q.lesson)).size}
+export const bankStats={questions:questionBank.length,seeds:new Set(questionBank.map(q=>q.familyId)).size,lessons:new Set(questionBank.map(q=>q.lesson)).size}

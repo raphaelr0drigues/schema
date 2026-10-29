@@ -1,12 +1,12 @@
 # Schema.
 
-Plataforma educacional premium para estudo de Modelagem de Banco de Dados, construída a partir das Aulas 00 a 09 da disciplina (sem Aula 07, dedicada ao projeto prático).
+Plataforma de estudos com conteúdo por aula e progresso por disciplina: Modelagem de Banco de Dados (Aulas 00 a 09, sem Aula 07) e Desenvolvimento Front-End para Web (Aulas 01 a 11).
 
 ## Recursos
 
 - dashboard responsivo e trilha por aula;
-- banco inicial de 154 questões com referência de aula e página;
-- simulados de exatamente 10 questões (3 fáceis, 4 médias, 3 difíceis);
+- 132 questões distintas de Front-End e 102 de MDB, sem contar paráfrases como novas questões;
+- simulados de exatamente 10 questões, sem repetir famílias; distribuição alvo de 3 fáceis, 4 médias e 3 difíceis, ajustada à disponibilidade de cada aula;
 - alternativas embaralhadas e correção comentada;
 - questões conceituais, práticas, SQL e identificação de erros;
 - revisão, histórico e estatísticas em `localStorage`;
@@ -30,7 +30,11 @@ npm run lint
 
 ## Estrutura de conteúdo
 
-O banco fica em `src/data/question-bank.ts`. Cada questão contém aula, página, assunto, dificuldade, tipo, alternativas, resposta e explicação. Para incluir uma nova aula, adicione suas questões ao arquivo e registre a aula na lista `lessons` em `src/App.tsx`.
+As disciplinas são registradas em `src/data/disciplines.ts`. Cada uma possui seu conteúdo e banco de questões. Uma questão contém ID estável, família, aula, página relacionada, assunto, dificuldade, tipo, alternativas, resposta e explicação.
+
+Os exercícios complementares são autorais e identificados como tal: a página remete ao assunto no PDF, sem atribuir o enunciado ao professor. Referências de apoio incluem documentação e exercícios públicos da MDN, GitHub Docs, Pro Git, MySQL e PostgreSQL. Os links aparecem após a correção e na revisão. Novas versões que mudam o sentido das questões recebem novos IDs, preservando os resultados anteriores no histórico.
+
+Para adicionar uma aula, inclua o guia no arquivo de conteúdo da disciplina e pelo menos 10 famílias distintas no banco. Front-End contém 12 por aula, com margem para sorteio e equilíbrio de dificuldade. A seleção rejeita bancos insuficientes em vez de preencher vagas com duplicatas. Os testes exercitam todas as aulas e o fluxo completo de resposta, correção e histórico.
 
 ## Publicação
 

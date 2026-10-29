@@ -12,6 +12,9 @@ export interface Question {
   correct: number;
   explanation: string;
   source: string;
+  familyId?: string;
+  reference?: { label: string; url: string };
+  origin?: string;
 }
 export interface AttemptAnswer {
   questionId: string;

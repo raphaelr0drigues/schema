@@ -107,7 +107,11 @@ export function App() {
               transition={{ duration: 0.22 }}
             >
               {view === "dashboard" && (
-            <Dashboard state={state} chooseDiscipline={chooseDiscipline} go={go} />
+                <Dashboard
+                  state={state}
+                  chooseDiscipline={chooseDiscipline}
+                  go={go}
+                />
               )}{" "}
               {view === "lessons" && (
                 <Lessons
@@ -605,7 +609,12 @@ function Lessons({
     <div>
       <div className="mb-5 flex flex-wrap gap-2">
         {disciplineList.map((item) => (
-          <Button key={item.id} size="sm" variant={item.id === discipline.id ? "default" : "outline"} onClick={() => chooseDiscipline(item.id)}>
+          <Button
+            key={item.id}
+            size="sm"
+            variant={item.id === discipline.id ? "default" : "outline"}
+            onClick={() => chooseDiscipline(item.id)}
+          >
             {item.code} · {item.short}
           </Button>
         ))}
@@ -673,7 +682,9 @@ function LessonDetail({
   back: () => void;
   startQuiz: (lesson: string) => void;
 }) {
-  const lesson = discipline.lessons.find((item) => item.id === lessonId) ?? discipline.lessons[0];
+  const lesson =
+    discipline.lessons.find((item) => item.id === lessonId) ??
+    discipline.lessons[0];
   const questions = discipline.questions.filter((q) => q.lesson === lesson.id);
   const answered = questions.filter((q) => state.answered[q.id]).length;
   return (
@@ -762,7 +773,7 @@ function LessonDetail({
                   <div className="mt-5 overflow-hidden rounded-md border border-border bg-[#090d13]">
                     <div className="flex items-center gap-2 border-b border-border px-4 py-2 font-mono text-[11px] text-muted-foreground">
                       <Code2 className="size-3.5" />
-                          Código
+                      Código
                     </div>
                     <pre className="overflow-x-auto p-4 text-xs leading-6 text-[#bfdbfe]">
                       <code>{section.code}</code>
@@ -903,7 +914,9 @@ function Quiz({
     <div className="mx-auto max-w-4xl">
       <PageTitle
         eyebrow={
-          lessonId ? `${discipline.code} · ${lessonId} · simulado exclusivo` : discipline.name
+          lessonId
+            ? `${discipline.code} · ${lessonId} · simulado exclusivo`
+            : discipline.name
         }
         title="10 questões. Uma tentativa."
         description={
@@ -1092,6 +1105,7 @@ function QuizResult({
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
                   {d.q.explanation}
                 </p>
+                <QuestionReference question={d.q} />
               </CardContent>
             </Card>
           );
@@ -1101,7 +1115,13 @@ function QuizResult({
   );
 }
 
-function Review({ state, discipline }: { state: AppState; discipline: Discipline }) {
+function Review({
+  state,
+  discipline,
+}: {
+  state: AppState;
+  discipline: Discipline;
+}) {
   const wrong = discipline.questions.filter((q) => {
     const a = state.answered[q.id];
     return a && a.correct < a.attempts;
@@ -1139,10 +1159,33 @@ function Review({ state, discipline }: { state: AppState; discipline: Discipline
                 <p className="mt-4 font-mono text-xs text-[#60A5FA]">
                   {q.source}
                 </p>
+                <QuestionReference question={q} />
               </CardContent>
             </Card>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+function QuestionReference({ question }: { question: Question }) {
+  if (!question.origin && !question.reference) return null;
+  return (
+    <div className="mt-4 border-t border-border pt-3 text-xs leading-5 text-muted-foreground">
+      {question.origin && (
+        <p>
+          {question.origin} · assunto relacionado à {question.source}.
+        </p>
+      )}
+      {question.reference && (
+        <a
+          className="mt-1 inline-block text-[#60A5FA] underline underline-offset-4"
+          href={question.reference.url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Conferir: {question.reference.label}
+        </a>
       )}
     </div>
   );
@@ -1178,7 +1221,9 @@ function HistoryView({ state, reset }: { state: AppState; reset: () => void }) {
                   <ChartNoAxesColumnIncreasing className="size-5" />
                 </div>
                 <div>
-                  <p className="font-medium">Simulado de {disciplines[a.disciplineId ?? "mdb"].short}</p>
+                  <p className="font-medium">
+                    Simulado de {disciplines[a.disciplineId ?? "mdb"].short}
+                  </p>
                   <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Clock3 className="size-3" />
                     {new Date(a.date).toLocaleString("pt-BR")}
