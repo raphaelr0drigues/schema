@@ -3,4 +3,6 @@ dist
 .DS_Store
 *.local
 coverage
+test-results
+tmp
 
