@@ -14,6 +14,18 @@ import { frontendQuestionBank } from "./data/frontend-question-bank";
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  delete document.documentElement.dataset.theme;
+});
+
+it("mantém o modo escuro como padrão e persiste a escolha pelo modo claro", () => {
+  render(<App />);
+  expect(document.documentElement.dataset.theme).toBe("dark");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Ativar modo claro" }),
+  );
+  expect(document.documentElement.dataset.theme).toBe("light");
+  expect(localStorage.getItem("schema-theme")).toBe("light");
+  expect(screen.getByRole("button", { name: "Ativar modo escuro" })).toBeTruthy();
 });
 
 it("corrige exatamente as dez questões mostradas e preserva a disciplina no histórico", async () => {

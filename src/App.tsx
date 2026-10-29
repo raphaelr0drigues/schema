@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowLeft,
@@ -18,6 +18,8 @@ import {
   Play,
   RotateCcw,
   Search,
+  Moon,
+  Sun,
   X,
   XCircle,
 } from "lucide-react";
@@ -59,7 +61,17 @@ export function App() {
   const [disciplineId, setDisciplineId] = useState<DisciplineId>("mdb");
   const [selectedLesson, setSelectedLesson] = useState("Aula 01");
   const [quizLesson, setQuizLesson] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"dark" | "light">(() =>
+    localStorage.getItem("schema-theme") === "light" ? "light" : "dark",
+  );
   const discipline = disciplines[disciplineId];
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("schema-theme", theme);
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", theme === "dark" ? "#050608" : "#f7f7f4");
+  }, [theme]);
   const go = (v: View) => {
     setView(v);
     setMobile(false);
@@ -91,11 +103,13 @@ export function App() {
         close={() => setMobile(false)}
         discipline={discipline}
       />
-      <main className="min-h-screen lg:pl-64">
+      <main className="min-h-screen lg:pl-72">
         <Topbar
           onMenu={() => setMobile(true)}
           go={go}
           discipline={discipline}
+          theme={theme}
+          toggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
         />
         <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
           <AnimatePresence mode="wait">
@@ -190,14 +204,14 @@ function Sidebar({
       </AnimatePresence>
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-[#0c1016]/95 backdrop-blur-xl transition-transform lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-background/95 backdrop-blur-xl transition-transform lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex h-20 items-center justify-between border-b border-border px-6">
           <button className="text-left" onClick={() => go("dashboard")}>
             <span className="text-2xl font-bold tracking-[-.04em]">
-              Schema<span className="text-[#60A5FA]">.</span>
+              Schema<span className="text-highlight">.</span>
             </span>
             <span className="mt-0.5 block max-w-[180px] truncate text-[11px] text-muted-foreground">
               {discipline.name}
@@ -218,9 +232,9 @@ function Sidebar({
               key={v}
               onClick={() => (v === "quiz" ? openGeneralQuiz() : go(v))}
               className={cn(
-                "group flex h-11 items-center gap-3 rounded-md border-l-2 px-4 text-sm transition-colors",
+                "group flex h-11 items-center gap-3 rounded-full border px-4 text-sm transition-colors",
                 view === v || (view === "lesson" && v === "lessons")
-                  ? "border-[#60A5FA] bg-primary/20 text-[#93C5FD]"
+                  ? "border-primary/40 bg-primary/15 text-highlight"
                   : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
@@ -231,7 +245,7 @@ function Sidebar({
         </nav>
         <div className="border-t border-border p-5">
           <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-md bg-primary/15 text-[#60A5FA]">
+            <div className="grid size-9 place-items-center rounded-full bg-primary/15 text-highlight">
               <Database className="size-[18px]" />
             </div>
             <div>
@@ -251,13 +265,17 @@ function Topbar({
   onMenu,
   go,
   discipline,
+  theme,
+  toggleTheme,
 }: {
   onMenu: () => void;
   go: (v: View) => void;
   discipline: Discipline;
+  theme: "dark" | "light";
+  toggleTheme: () => void;
 }) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6 lg:px-10">
+    <header className="sticky top-0 z-30 flex h-[72px] items-center border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6 lg:px-10">
       <Button
         className="mr-3 lg:hidden"
         variant="ghost"
@@ -268,7 +286,7 @@ function Topbar({
       </Button>
       <button
         onClick={() => go("lessons")}
-        className="flex h-9 max-w-md flex-1 items-center gap-3 rounded-md border border-border bg-card px-3 text-sm text-muted-foreground transition-colors hover:border-[#3b485a]"
+        className="flex h-10 max-w-md flex-1 items-center gap-3 rounded-full border border-border bg-card/70 px-4 text-sm text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
       >
         <Search className="size-4" />
         <span className="truncate">Buscar em {discipline.short}...</span>
@@ -281,6 +299,18 @@ function Topbar({
           Sem conta. Sem rastreamento.
         </p>
       </div>
+      <Button
+        className="ml-3"
+        variant="outline"
+        size="icon"
+        onClick={toggleTheme}
+        aria-label={
+          theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"
+        }
+        title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+      >
+        {theme === "dark" ? <Sun /> : <Moon />}
+      </Button>
     </header>
   );
 }
@@ -296,15 +326,16 @@ function Dashboard({
 }) {
   return (
     <div className="flex flex-col gap-8">
-      <section className="border-b border-border pb-8">
-        <p className="mb-3 font-mono text-xs uppercase tracking-[.2em] text-[#60A5FA]">
+      <section className="relative overflow-hidden border-b border-border pb-10 pt-4 sm:pb-12 sm:pt-8">
+        <p className="mb-3 font-mono text-xs uppercase tracking-[.2em] text-highlight">
           Seu esquema para estudar
         </p>
-        <h1 className="max-w-4xl text-4xl font-bold tracking-[-.045em] sm:text-5xl">
+        <h1 className="max-w-5xl text-[clamp(2.75rem,7vw,6.75rem)] font-semibold leading-[.92] tracking-[-.07em]">
           Uma plataforma.
-          <br className="hidden sm:block" /> Todas as suas disciplinas.
+          <br />{" "}
+          <span className="text-foreground/35">Todas as suas disciplinas.</span>
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+        <p className="mt-7 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
           Conteúdo por aula, prática direcionada, simulados de prova e revisão
           inteligente — com o progresso separado em cada matéria.
         </p>
@@ -316,7 +347,7 @@ function Dashboard({
             Escolha uma matéria para continuar.
           </p>
         </div>
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           {disciplineList.map((d) => (
             <DisciplineCard
               key={d.id}
@@ -357,10 +388,10 @@ function DisciplineCard({
     (l) => state.studied[`${discipline.id}:${l.id}`],
   ).length;
   return (
-    <Card className="group overflow-hidden transition hover:border-[#2563EB]/70">
+    <Card className="group overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-primary/60 hover:shadow-[0_24px_70px_-38px_var(--primary)]">
       <CardHeader>
         <div className="mb-5 flex items-center justify-between">
-          <span className="grid size-11 place-items-center rounded-md border border-[#2563EB]/40 bg-primary/10 font-mono text-xs text-[#60A5FA]">
+          <span className="grid size-11 place-items-center rounded-full border border-primary/35 bg-primary/10 font-mono text-xs text-highlight">
             {discipline.code}
           </span>
           <span className="font-mono text-[11px] text-muted-foreground">
@@ -414,7 +445,7 @@ function Metric({
     <div className="bg-card p-5">
       <div className="mb-6 flex items-center justify-between">
         <span className="text-sm text-muted-foreground">{label}</span>
-        <Icon className="size-4 text-[#60A5FA]" />
+        <Icon className="size-4 text-highlight" />
       </div>
       <p className="mb-4 text-3xl font-semibold tracking-tight">{value}</p>
       <Progress value={progress} />
@@ -426,7 +457,7 @@ function Continue({ openLesson }: { openLesson: (id: string) => void }) {
     <Card className="overflow-hidden">
       <div className="grid lg:grid-cols-[.9fr_1.1fr]">
         <div className="flex flex-col justify-center p-6 sm:p-8">
-          <p className="mb-3 text-xs font-medium uppercase tracking-[.16em] text-[#60A5FA]">
+          <p className="mb-3 text-xs font-medium uppercase tracking-[.16em] text-highlight">
             Continuar estudando · Aula 06
           </p>
           <h2 className="text-2xl font-semibold tracking-tight">
@@ -454,7 +485,7 @@ function NormalizationVisual() {
   return (
     <div className="grid h-full content-center gap-5 font-mono text-xs sm:grid-cols-[1fr_auto_1fr]">
       <div>
-        <p className="mb-3 text-[#60A5FA]">ANTES · NÃO ATÔMICO</p>
+        <p className="mb-3 text-highlight">ANTES · NÃO ATÔMICO</p>
         <div className="overflow-hidden rounded border border-border">
           <div className="grid grid-cols-[40px_1fr_1.4fr] bg-muted px-3 py-2 text-muted-foreground">
             <span>id</span>
@@ -468,9 +499,9 @@ function NormalizationVisual() {
           </div>
         </div>
       </div>
-      <ChevronRight className="hidden self-center text-[#60A5FA] sm:block" />
+      <ChevronRight className="hidden self-center text-highlight sm:block" />
       <div>
-        <p className="mb-3 text-[#60A5FA]">DEPOIS · 1FN</p>
+        <p className="mb-3 text-highlight">DEPOIS · 1FN</p>
         <div className="overflow-hidden rounded border border-border">
           <div className="grid grid-cols-3 bg-muted px-3 py-2 text-muted-foreground">
             <span>id</span>
@@ -522,10 +553,10 @@ function LessonRail({
             onClick={() => openLesson(l.id)}
             className="group bg-card p-4 text-left transition-colors hover:bg-muted"
           >
-            <span className="mb-5 grid size-7 place-items-center rounded-full border border-border text-[11px] text-muted-foreground group-hover:border-[#60A5FA] group-hover:text-[#60A5FA]">
+            <span className="mb-5 grid size-7 place-items-center rounded-full border border-border text-[11px] text-muted-foreground group-hover:border-ring group-hover:text-highlight">
               {String(i + 1).padStart(2, "0")}
             </span>
-            <p className="text-xs text-[#60A5FA]">{l.id}</p>
+            <p className="text-xs text-highlight">{l.id}</p>
             <p className="mt-1 line-clamp-2 text-sm font-medium">{l.title}</p>
           </button>
         ))}
@@ -630,7 +661,7 @@ function Lessons({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar aula ou assunto..."
-          className="h-11 w-full rounded-md border border-border bg-card pl-10 pr-4 text-sm outline-none transition focus:border-[#60A5FA] focus:ring-2 focus:ring-[#60A5FA]/20"
+          className="h-11 w-full rounded-full border border-border bg-card pl-10 pr-4 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
         />
       </div>
       <div className="overflow-hidden rounded-lg border border-border">
@@ -645,7 +676,7 @@ function Lessons({
               transition={{ delay: i * 0.035 }}
               className="grid gap-4 border-b border-border bg-card p-5 last:border-b-0 md:grid-cols-[70px_1fr_auto] md:items-center"
             >
-              <span className="font-mono text-xs text-[#60A5FA]">{l.id}</span>
+              <span className="font-mono text-xs text-highlight">{l.id}</span>
               <div>
                 <h3 className="font-medium">{l.title}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -699,7 +730,7 @@ function LessonDetail({
       <section className="mb-8 border-b border-border pb-8">
         <div className="grid gap-7 lg:grid-cols-[1fr_280px] lg:items-end">
           <div>
-            <p className="mb-3 font-mono text-xs uppercase tracking-[.2em] text-[#60A5FA]">
+            <p className="mb-3 font-mono text-xs uppercase tracking-[.2em] text-highlight">
               {lesson.id} · guia de estudo
             </p>
             <h1 className="max-w-3xl text-4xl font-bold tracking-[-.045em] sm:text-5xl">
@@ -731,7 +762,7 @@ function LessonDetail({
           <section className="mb-8 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
             {lesson.goals.map((goal, i) => (
               <div key={goal} className="bg-card p-5">
-                <span className="font-mono text-xs text-[#60A5FA]">
+                <span className="font-mono text-xs text-highlight">
                   0{i + 1}
                 </span>
                 <p className="mt-4 text-sm leading-6">{goal}</p>
@@ -746,14 +777,14 @@ function LessonDetail({
                 className="scroll-mt-24 rounded-lg border border-border bg-card p-5 sm:p-7"
               >
                 <div className="mb-5 flex items-start gap-4">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-full border border-border font-mono text-xs text-[#60A5FA]">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full border border-border font-mono text-xs text-highlight">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div>
                     <h2 className="text-xl font-semibold tracking-tight">
                       {section.title}
                     </h2>
-                    <p className="mt-1 font-mono text-[11px] text-[#60A5FA]">
+                    <p className="mt-1 font-mono text-[11px] text-highlight">
                       {section.pages}
                     </p>
                   </div>
@@ -764,7 +795,7 @@ function LessonDetail({
                 <ul className="mt-5 grid gap-2 border-t border-border pt-5">
                   {section.points.map((point) => (
                     <li key={point} className="flex gap-3 text-sm leading-6">
-                      <Check className="mt-1 size-4 shrink-0 text-[#60A5FA]" />
+                      <Check className="mt-1 size-4 shrink-0 text-highlight" />
                       <span>{point}</span>
                     </li>
                   ))}
@@ -783,7 +814,7 @@ function LessonDetail({
               </section>
             ))}
           </div>
-          <section className="mt-8 flex flex-col items-start justify-between gap-5 rounded-lg border border-[#2563EB]/40 bg-primary/10 p-6 sm:flex-row sm:items-center">
+          <section className="mt-8 flex flex-col items-start justify-between gap-5 rounded-2xl border border-primary/40 bg-primary/10 p-6 sm:flex-row sm:items-center">
             <div>
               <h2 className="text-xl font-semibold">Terminou a leitura?</h2>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -811,7 +842,7 @@ function LessonDetail({
                   href={`#topico-${i + 1}`}
                   className="flex items-center gap-3 rounded-md px-2 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 >
-                  <span className="font-mono text-[10px] text-[#60A5FA]">
+                  <span className="font-mono text-[10px] text-highlight">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   {section.title}
@@ -953,15 +984,15 @@ function Quiz({
                 className={cn(
                   "flex min-h-14 items-center gap-4 rounded-md border p-4 text-left text-sm leading-6 transition",
                   selected === i
-                    ? "border-[#60A5FA] bg-primary/10 text-foreground ring-2 ring-[#60A5FA]/15"
-                    : "border-border bg-background/40 text-muted-foreground hover:border-[#3c4a5e] hover:text-foreground",
+                    ? "border-ring bg-primary/10 text-foreground ring-2 ring-ring/15"
+                    : "border-border bg-background/40 text-muted-foreground hover:border-ring hover:text-foreground",
                 )}
               >
                 <span
                   className={cn(
                     "grid size-7 shrink-0 place-items-center rounded border font-mono text-xs",
                     selected === i
-                      ? "border-[#60A5FA] bg-primary text-white"
+                      ? "border-ring bg-primary text-white"
                       : "border-border",
                   )}
                 >
@@ -1023,7 +1054,7 @@ function QuizResult({
   return (
     <div className="mx-auto max-w-4xl">
       <section className="mb-8 border-b border-border pb-8">
-        <p className="mb-3 font-mono text-xs uppercase tracking-[.2em] text-[#60A5FA]">
+        <p className="mb-3 font-mono text-xs uppercase tracking-[.2em] text-highlight">
           Correção concluída{lessonId ? ` · ${lessonId}` : ""}
         </p>
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
@@ -1156,7 +1187,7 @@ function Review({
                 <p className="text-sm leading-6 text-muted-foreground">
                   {q.explanation}
                 </p>
-                <p className="mt-4 font-mono text-xs text-[#60A5FA]">
+                <p className="mt-4 font-mono text-xs text-highlight">
                   {q.source}
                 </p>
                 <QuestionReference question={q} />
@@ -1179,7 +1210,7 @@ function QuestionReference({ question }: { question: Question }) {
       )}
       {question.reference && (
         <a
-          className="mt-1 inline-block text-[#60A5FA] underline underline-offset-4"
+          className="mt-1 inline-block text-highlight underline underline-offset-4"
           href={question.reference.url}
           target="_blank"
           rel="noopener noreferrer"
@@ -1217,7 +1248,7 @@ function HistoryView({ state, reset }: { state: AppState; reset: () => void }) {
               className="grid grid-cols-[1fr_auto] items-center border-b border-border bg-card p-5 last:border-b-0"
             >
               <div className="flex items-center gap-4">
-                <div className="grid size-10 place-items-center rounded-md bg-primary/10 text-[#60A5FA]">
+                <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-highlight">
                   <ChartNoAxesColumnIncreasing className="size-5" />
                 </div>
                 <div>
@@ -1252,7 +1283,7 @@ function PageTitle({
 }) {
   return (
     <header className="mb-8">
-      <p className="mb-3 font-mono text-xs uppercase tracking-[.2em] text-[#60A5FA]">
+      <p className="mb-3 font-mono text-xs uppercase tracking-[.2em] text-highlight">
         {eyebrow}
       </p>
       <h1 className="text-3xl font-bold tracking-[-.04em] sm:text-4xl">
