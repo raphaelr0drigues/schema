@@ -246,7 +246,13 @@ function Sidebar({
         <div className="border-t border-border p-5">
           <div className="flex items-center gap-3">
             <div className="grid size-9 place-items-center rounded-full bg-primary/15 text-highlight">
-              <Database className="size-[18px]" />
+              {discipline.id === "mdb" ? (
+                <Database className="size-[18px]" />
+              ) : discipline.id === "frontend" ? (
+                <Code2 className="size-[18px]" />
+              ) : (
+                <BrainCircuit className="size-[18px]" />
+              )}
             </div>
             <div>
               <p className="text-sm font-medium">{discipline.code}</p>
@@ -347,7 +353,7 @@ function Dashboard({
             Escolha uma matéria para continuar.
           </p>
         </div>
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {disciplineList.map((d) => (
             <DisciplineCard
               key={d.id}

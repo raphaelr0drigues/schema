@@ -10,6 +10,7 @@ import {
 } from "@testing-library/react";
 import { App } from "./App";
 import { frontendQuestionBank } from "./data/frontend-question-bank";
+import { algorithmsQuestionBank } from "./data/algorithms-question-bank";
 
 afterEach(() => {
   cleanup();
@@ -78,4 +79,29 @@ it("corrige exatamente as dez questões mostradas e preserva a disciplina no his
     saved.attempts[0].answers.every((a: { correct: boolean }) => a.correct),
   ).toBe(true);
   expect(screen.getAllByRole("link", { name: /Conferir:/ })).toHaveLength(10);
+});
+
+it("abre Algoritmos com conteúdo próprio e pratica somente a aula escolhida", async () => {
+  window.scrollTo = () => {};
+  render(<App />);
+  fireEvent.click(screen.getAllByRole("button", { name: "Abrir disciplina" })[2]);
+  await screen.findByRole("heading", { name: "Aulas e assuntos" });
+  expect(screen.getAllByRole("button", { name: "Estudar aula" })).toHaveLength(15);
+  fireEvent.click(screen.getAllByRole("button", { name: "Estudar aula" })[0]);
+  expect(await screen.findByRole("heading", { name: "Algoritmos: o caminho até a solução" })).toBeTruthy();
+  expect(
+    await screen.findByRole("heading", { name: "O percurso da disciplina" }),
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Praticar esta aula" }));
+  await screen.findByRole("heading", { name: "10 questões. Uma tentativa." });
+  expect(
+    algorithmsQuestionBank.some((q) =>
+      screen.queryByText(q.prompt, { exact: true }),
+    ),
+  ).toBe(true);
+  expect(
+    algorithmsQuestionBank
+      .filter((q) => screen.queryByText(q.prompt, { exact: true }))
+      .every((q) => q.lesson === "Aula 01"),
+  ).toBe(true);
 });

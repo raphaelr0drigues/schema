@@ -2,8 +2,10 @@ import { lessonContents } from "./lesson-content";
 import { questionBank } from "./question-bank";
 import { frontendLessonContents } from "./frontend-lesson-content";
 import { frontendQuestionBank } from "./frontend-question-bank";
+import { algorithmsLessonContents } from "./algorithms-lesson-content";
+import { algorithmsQuestionBank } from "./algorithms-question-bank";
 
-export type DisciplineId = "mdb" | "frontend";
+export type DisciplineId = "mdb" | "frontend" | "algorithms";
 export const disciplines = {
   mdb: {
     id: "mdb" as const,
@@ -36,6 +38,22 @@ export const disciplines = {
     },
     lessons: frontendLessonContents,
     questions: frontendQuestionBank,
+  },
+  algorithms: {
+    id: "algorithms" as const,
+    name: "Algoritmos e Pensamento Computacional",
+    short: "Algoritmos",
+    code: "APC",
+    description:
+      "Lógica, linguagem C, controle de fluxo, arrays, structs, arquivos e modularização.",
+    mascot: {
+      name: "Otto",
+      animal: "Polvo",
+      image: "mascots/algorithms-octopus.webp",
+      alt: "Otto, o polvo mascote de Algoritmos e Pensamento Computacional",
+    },
+    lessons: algorithmsLessonContents,
+    questions: algorithmsQuestionBank,
   },
 };
 export const disciplineList = Object.values(disciplines);

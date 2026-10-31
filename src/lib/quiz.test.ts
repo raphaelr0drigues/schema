@@ -4,6 +4,8 @@ import { questionBank } from "@/data/question-bank";
 import { lessonContents } from "@/data/lesson-content";
 import { frontendQuestionBank } from "@/data/frontend-question-bank";
 import { frontendLessonContents } from "@/data/frontend-lesson-content";
+import { algorithmsQuestionBank } from "@/data/algorithms-question-bank";
+import { algorithmsLessonContents } from "@/data/algorithms-lesson-content";
 import type { Question } from "@/types";
 const bank = Array.from({ length: 30 }, (_, i) => ({
   id: String(i),
@@ -92,6 +94,44 @@ describe("quiz", () => {
         ),
       ).toBe(true);
     }
+  });
+  it("mantém 180 questões de Algoritmos distribuídas igualmente por 15 aulas", () => {
+    expect(algorithmsQuestionBank).toHaveLength(180);
+    expect(new Set(algorithmsQuestionBank.map(questionFamily)).size).toBe(180);
+    expect(algorithmsQuestionBank.filter((question) => question.visual).length).toBeGreaterThanOrEqual(30);
+    for (const lesson of algorithmsLessonContents) {
+      const pool = algorithmsQuestionBank.filter((q) => q.lesson === lesson.id);
+      expect(pool, lesson.id).toHaveLength(12);
+      expect(pool.filter((q) => q.difficulty === "fácil"), lesson.id).toHaveLength(3);
+      expect(pool.filter((q) => q.difficulty === "média"), lesson.id).toHaveLength(6);
+      expect(pool.filter((q) => q.difficulty === "difícil"), lesson.id).toHaveLength(3);
+    }
+  });
+  it("gera simulados equilibrados e restritos à aula em Algoritmos", () => {
+    for (const lesson of algorithmsLessonContents) {
+      const pool = algorithmsQuestionBank.filter((q) => q.lesson === lesson.id);
+      for (let seed = 1; seed <= 50; seed++) {
+        const quiz = selectQuiz(pool, { answered: {}, attempts: [], studied: {} }, 10, seed);
+        expect(quiz).toHaveLength(10);
+        expect(quiz.every((q) => q.lesson === lesson.id), lesson.id).toBe(true);
+        expect(quiz.filter((q) => q.difficulty === "fácil"), lesson.id).toHaveLength(3);
+        expect(quiz.filter((q) => q.difficulty === "média"), lesson.id).toHaveLength(4);
+        expect(quiz.filter((q) => q.difficulty === "difícil"), lesson.id).toHaveLength(3);
+      }
+    }
+  });
+  it("mantém alternativas e fontes válidas no banco de Algoritmos", () => {
+    expect(
+      algorithmsQuestionBank.every(
+        (q) =>
+          q.options.length === 4 &&
+          new Set(q.options).size === 4 &&
+          q.correct >= 0 &&
+          q.correct < 4 &&
+          q.source.length > 0 &&
+          q.explanation.length > 0,
+      ),
+    ).toBe(true);
   });
   it("mantém o banco Front-End sem variantes contadas em dobro e com fontes", () => {
     expect(frontendQuestionBank).toHaveLength(132);

@@ -10,7 +10,7 @@ Plataforma de estudos com conteúdo por aula e progresso por disciplina: Modelag
 - alternativas embaralhadas e correção comentada;
 - questões conceituais, práticas, SQL e identificação de erros;
 - 40 questões visuais iniciais com código real, tabelas e diagramas acessíveis;
-- identidade por disciplina com mascote próprio: Nilo (MDB) e Pixel (Front-End);
+- identidade por disciplina com mascote próprio: Nilo (MDB), Pixel (Front-End) e Otto (Algoritmos);
 - revisão, histórico e estatísticas em `localStorage`;
 - prioridade para questões ainda não respondidas;
 - funcionamento inteiramente local, sem backend ou autenticação.
