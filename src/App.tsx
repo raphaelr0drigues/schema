@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   BookOpen,
   BrainCircuit,
+  BriefcaseBusiness,
   ChartNoAxesColumnIncreasing,
   Check,
   ChevronLeft,
@@ -250,8 +251,10 @@ function Sidebar({
                 <Database className="size-[18px]" />
               ) : discipline.id === "frontend" ? (
                 <Code2 className="size-[18px]" />
-              ) : (
+              ) : discipline.id === "algorithms" ? (
                 <BrainCircuit className="size-[18px]" />
+              ) : (
+                <BriefcaseBusiness className="size-[18px]" />
               )}
             </div>
             <div>
@@ -353,7 +356,7 @@ function Dashboard({
             Escolha uma matéria para continuar.
           </p>
         </div>
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-2">
           {disciplineList.map((d) => (
             <DisciplineCard
               key={d.id}

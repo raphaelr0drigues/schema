@@ -11,6 +11,7 @@ import {
 import { App } from "./App";
 import { frontendQuestionBank } from "./data/frontend-question-bank";
 import { algorithmsQuestionBank } from "./data/algorithms-question-bank";
+import { designQuestionBank } from "./data/design-question-bank";
 
 afterEach(() => {
   cleanup();
@@ -101,6 +102,27 @@ it("abre Algoritmos com conteúdo próprio e pratica somente a aula escolhida", 
   ).toBe(true);
   expect(
     algorithmsQuestionBank
+      .filter((q) => screen.queryByText(q.prompt, { exact: true }))
+      .every((q) => q.lesson === "Aula 01"),
+  ).toBe(true);
+});
+
+it("abre Design Profissional com conteúdo próprio e simulado restrito à aula", async () => {
+  window.scrollTo = () => {};
+  render(<App />);
+  fireEvent.click(screen.getAllByRole("button", { name: "Abrir disciplina" })[3]);
+  await screen.findByRole("heading", { name: "Aulas e assuntos" });
+  expect(screen.getAllByRole("button", { name: "Estudar aula" })).toHaveLength(15);
+  fireEvent.click(screen.getAllByRole("button", { name: "Estudar aula" })[0]);
+  expect(await screen.findByRole("heading", { name: "Carreiras em tecnologia" })).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: "Um mercado plural" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Praticar esta aula" }));
+  await screen.findByRole("heading", { name: "10 questões. Uma tentativa." });
+  expect(
+    designQuestionBank.some((q) => screen.queryByText(q.prompt, { exact: true })),
+  ).toBe(true);
+  expect(
+    designQuestionBank
       .filter((q) => screen.queryByText(q.prompt, { exact: true }))
       .every((q) => q.lesson === "Aula 01"),
   ).toBe(true);

@@ -53,7 +53,7 @@ export interface Attempt {
   date: string;
   score: number;
   answers: AttemptAnswer[];
-  disciplineId?: "mdb" | "frontend" | "algorithms";
+  disciplineId?: "mdb" | "frontend" | "algorithms" | "design";
   lessonId?: string | null;
 }
 export interface AppState {

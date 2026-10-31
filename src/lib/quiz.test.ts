@@ -6,6 +6,8 @@ import { frontendQuestionBank } from "@/data/frontend-question-bank";
 import { frontendLessonContents } from "@/data/frontend-lesson-content";
 import { algorithmsQuestionBank } from "@/data/algorithms-question-bank";
 import { algorithmsLessonContents } from "@/data/algorithms-lesson-content";
+import { designQuestionBank } from "@/data/design-question-bank";
+import { designLessonContents } from "@/data/design-lesson-content";
 import type { Question } from "@/types";
 const bank = Array.from({ length: 30 }, (_, i) => ({
   id: String(i),
@@ -123,6 +125,37 @@ describe("quiz", () => {
   it("mantém alternativas e fontes válidas no banco de Algoritmos", () => {
     expect(
       algorithmsQuestionBank.every(
+        (q) =>
+          q.options.length === 4 &&
+          new Set(q.options).size === 4 &&
+          q.correct >= 0 &&
+          q.correct < 4 &&
+          q.source.length > 0 &&
+          q.explanation.length > 0,
+      ),
+    ).toBe(true);
+  });
+  it("mantém 180 questões de Design Profissional distribuídas igualmente", () => {
+    expect(designQuestionBank).toHaveLength(180);
+    expect(new Set(designQuestionBank.map(questionFamily)).size).toBe(180);
+    expect(designQuestionBank.filter((question) => question.visual).length).toBe(30);
+    for (const lesson of designLessonContents) {
+      const pool = designQuestionBank.filter((q) => q.lesson === lesson.id);
+      expect(pool, lesson.id).toHaveLength(12);
+      expect(pool.filter((q) => q.difficulty === "fácil"), lesson.id).toHaveLength(3);
+      expect(pool.filter((q) => q.difficulty === "média"), lesson.id).toHaveLength(6);
+      expect(pool.filter((q) => q.difficulty === "difícil"), lesson.id).toHaveLength(3);
+      for (let seed = 1; seed <= 50; seed++) {
+        const quiz = selectQuiz(pool, { answered: {}, attempts: [], studied: {} }, 10, seed);
+        expect(quiz).toHaveLength(10);
+        expect(quiz.every((q) => q.lesson === lesson.id), lesson.id).toBe(true);
+        expect(quiz.filter((q) => q.difficulty === "fácil"), lesson.id).toHaveLength(3);
+        expect(quiz.filter((q) => q.difficulty === "média"), lesson.id).toHaveLength(4);
+        expect(quiz.filter((q) => q.difficulty === "difícil"), lesson.id).toHaveLength(3);
+      }
+    }
+    expect(
+      designQuestionBank.every(
         (q) =>
           q.options.length === 4 &&
           new Set(q.options).size === 4 &&

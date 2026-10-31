@@ -4,8 +4,10 @@ import { frontendLessonContents } from "./frontend-lesson-content";
 import { frontendQuestionBank } from "./frontend-question-bank";
 import { algorithmsLessonContents } from "./algorithms-lesson-content";
 import { algorithmsQuestionBank } from "./algorithms-question-bank";
+import { designLessonContents } from "./design-lesson-content";
+import { designQuestionBank } from "./design-question-bank";
 
-export type DisciplineId = "mdb" | "frontend" | "algorithms";
+export type DisciplineId = "mdb" | "frontend" | "algorithms" | "design";
 export const disciplines = {
   mdb: {
     id: "mdb" as const,
@@ -54,6 +56,22 @@ export const disciplines = {
     },
     lessons: algorithmsLessonContents,
     questions: algorithmsQuestionBank,
+  },
+  design: {
+    id: "design" as const,
+    name: "Design Profissional",
+    short: "Design Profissional",
+    code: "DPR",
+    description:
+      "Identidade profissional, portfólio, carreira, certificações, IA e mercado de TI.",
+    mascot: {
+      name: "Vega",
+      animal: "Raposa",
+      image: "mascots/design-fox.webp",
+      alt: "Vega, a raposa mascote de Design Profissional",
+    },
+    lessons: designLessonContents,
+    questions: designQuestionBank,
   },
 };
 export const disciplineList = Object.values(disciplines);
