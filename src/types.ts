@@ -63,4 +63,5 @@ export interface AppState {
   >;
   attempts: Attempt[];
   studied: Record<string, boolean>;
+  practice: Record<string, { attempts: number; correct: number }>;
 }

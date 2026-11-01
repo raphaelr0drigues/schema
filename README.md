@@ -1,11 +1,12 @@
 # Schema.
 
-Plataforma de estudos com conteúdo por aula e progresso por disciplina: Modelagem de Banco de Dados (Aulas 00 a 09, sem Aula 07) e Desenvolvimento Front-End para Web (Aulas 01 a 11).
+Plataforma de estudos com conteúdo por aula e progresso por disciplina: Modelagem de Banco de Dados, Desenvolvimento Front-End para Web, Algoritmos e Pensamento Computacional e Design Profissional.
 
 ## Recursos
 
 - dashboard responsivo e trilha por aula;
-- 132 questões distintas de Front-End e 102 de MDB, sem contar paráfrases como novas questões;
+- 594 exercícios distribuídos entre as quatro disciplinas, sem contar paráfrases como novas questões;
+- prática guiada por disciplina ou aula, com dica, correção imediata e prioridade para conteúdos ainda não praticados;
 - simulados de exatamente 10 questões, sem repetir famílias; distribuição alvo de 3 fáceis, 4 médias e 3 difíceis, ajustada à disponibilidade de cada aula;
 - alternativas embaralhadas e correção comentada;
 - questões conceituais, práticas, SQL e identificação de erros;

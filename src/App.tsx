@@ -12,9 +12,11 @@ import {
   Clock3,
   Code2,
   Database,
+  Dumbbell,
   FileText,
   History,
   Home,
+  Lightbulb,
   Menu,
   Play,
   RotateCcw,
@@ -39,17 +41,32 @@ import {
   disciplineList,
   type DisciplineId,
 } from "@/data/disciplines";
-import { loadState, saveAttempt, clearState, markStudied } from "@/lib/storage";
+import {
+  loadState,
+  saveAttempt,
+  clearState,
+  markStudied,
+  savePractice,
+} from "@/lib/storage";
 import { selectQuiz, shuffledOptions } from "@/lib/quiz";
+import { practiceHint, selectPractice } from "@/lib/practice";
 import { cn } from "@/lib/utils";
 import type { AppState, Question, QuestionVisual } from "@/types";
 
-type View = "dashboard" | "lessons" | "lesson" | "quiz" | "review" | "history";
+type View =
+  | "dashboard"
+  | "lessons"
+  | "lesson"
+  | "practice"
+  | "quiz"
+  | "review"
+  | "history";
 type Discipline = (typeof disciplines)[DisciplineId];
 const lessons = disciplines.mdb.lessons;
 const nav = [
   { view: "dashboard" as const, label: "Início", icon: Home },
   { view: "lessons" as const, label: "Aulas", icon: BookOpen },
+  { view: "practice" as const, label: "Prática", icon: Dumbbell },
   { view: "quiz" as const, label: "Simulado", icon: BrainCircuit },
   { view: "review" as const, label: "Revisão", icon: RotateCcw },
   { view: "history" as const, label: "Histórico", icon: History },
@@ -62,6 +79,7 @@ export function App() {
   const [disciplineId, setDisciplineId] = useState<DisciplineId>("mdb");
   const [selectedLesson, setSelectedLesson] = useState("Aula 01");
   const [quizLesson, setQuizLesson] = useState<string | null>(null);
+  const [practiceLesson, setPracticeLesson] = useState<string | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
     localStorage.getItem("schema-theme") === "light" ? "light" : "dark",
   );
@@ -82,6 +100,7 @@ export function App() {
     setDisciplineId(id);
     setSelectedLesson("Aula 01");
     setQuizLesson(null);
+    setPracticeLesson(null);
     go("lessons");
   };
   const openLesson = (id: string) => {
@@ -94,12 +113,17 @@ export function App() {
     go("quiz");
   };
   const openGeneralQuiz = () => startQuiz(null);
+  const startPractice = (lesson: string | null = null) => {
+    setPracticeLesson(lesson);
+    go("practice");
+  };
   return (
     <div className="noise min-h-screen">
       <Sidebar
         view={view}
         go={go}
         openGeneralQuiz={openGeneralQuiz}
+        openPractice={() => startPractice(null)}
         open={mobile}
         close={() => setMobile(false)}
         discipline={discipline}
@@ -115,7 +139,7 @@ export function App() {
         <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
           <AnimatePresence mode="wait">
             <motion.div
-              key={`${view}-${disciplineId}-${selectedLesson}-${quizLesson ?? "geral"}`}
+              key={`${view}-${disciplineId}-${selectedLesson}-${quizLesson ?? "geral"}-${practiceLesson ?? "geral"}`}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
@@ -143,6 +167,16 @@ export function App() {
                   discipline={discipline}
                   back={() => go("lessons")}
                   startQuiz={startQuiz}
+                  startPractice={startPractice}
+                />
+              )}{" "}
+              {view === "practice" && (
+                <Practice
+                  state={state}
+                  setState={setState}
+                  discipline={discipline}
+                  initialLesson={practiceLesson}
+                  go={go}
                 />
               )}{" "}
               {view === "quiz" && (
@@ -162,7 +196,7 @@ export function App() {
                   state={state}
                   reset={() => {
                     clearState();
-                    setState({ answered: {}, attempts: [], studied: {} });
+                    setState({ answered: {}, attempts: [], studied: {}, practice: {} });
                   }}
                 />
               )}
@@ -178,6 +212,7 @@ function Sidebar({
   view,
   go,
   openGeneralQuiz,
+  openPractice,
   open,
   close,
   discipline,
@@ -185,6 +220,7 @@ function Sidebar({
   view: View;
   go: (v: View) => void;
   openGeneralQuiz: () => void;
+  openPractice: () => void;
   open: boolean;
   close: () => void;
   discipline: Discipline;
@@ -210,12 +246,22 @@ function Sidebar({
         )}
       >
         <div className="flex h-20 items-center justify-between border-b border-border px-6">
-          <button className="text-left" onClick={() => go("dashboard")}>
-            <span className="text-2xl font-bold tracking-[-.04em]">
-              Schema<span className="text-highlight">.</span>
-            </span>
-            <span className="mt-0.5 block max-w-[180px] truncate text-[11px] text-muted-foreground">
-              {discipline.name}
+          <button
+            className="flex items-center gap-3 text-left"
+            onClick={() => go("dashboard")}
+          >
+            <img
+              src={`${import.meta.env.BASE_URL}schema-icon.svg`}
+              alt=""
+              className="size-9 rounded-xl"
+            />
+            <span>
+              <span className="block text-2xl font-bold tracking-[-.04em]">
+                Schema<span className="text-highlight">.</span>
+              </span>
+              <span className="mt-0.5 block max-w-[160px] truncate text-[11px] text-muted-foreground">
+                {discipline.name}
+              </span>
             </span>
           </button>
           <Button
@@ -231,7 +277,13 @@ function Sidebar({
           {nav.map(({ view: v, label, icon: Icon }) => (
             <button
               key={v}
-              onClick={() => (v === "quiz" ? openGeneralQuiz() : go(v))}
+              onClick={() =>
+                v === "quiz"
+                  ? openGeneralQuiz()
+                  : v === "practice"
+                    ? openPractice()
+                    : go(v)
+              }
               className={cn(
                 "group flex h-11 items-center gap-3 rounded-full border px-4 text-sm transition-colors",
                 view === v || (view === "lesson" && v === "lessons")
@@ -724,12 +776,14 @@ function LessonDetail({
   discipline,
   back,
   startQuiz,
+  startPractice,
 }: {
   lessonId: string;
   state: AppState;
   discipline: Discipline;
   back: () => void;
   startQuiz: (lesson: string) => void;
+  startPractice: (lesson: string) => void;
 }) {
   const lesson =
     discipline.lessons.find((item) => item.id === lessonId) ??
@@ -874,8 +928,8 @@ function LessonDetail({
               ))}
             </CardContent>
             <CardFooter className="flex-col items-stretch gap-3">
-              <Button onClick={() => startQuiz(lesson.id)}>
-                <Play data-icon="inline-start" />
+              <Button onClick={() => startPractice(lesson.id)}>
+                <Dumbbell data-icon="inline-start" />
                 Praticar esta aula
               </Button>
               <div className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
@@ -886,6 +940,297 @@ function LessonDetail({
           </Card>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function Practice({
+  state,
+  setState,
+  discipline,
+  initialLesson,
+  go,
+}: {
+  state: AppState;
+  setState: (state: AppState) => void;
+  discipline: Discipline;
+  initialLesson: string | null;
+  go: (view: View) => void;
+}) {
+  const [lesson, setLesson] = useState(initialLesson ?? "all");
+  const [seed, setSeed] = useState(() => Date.now());
+  const [session, setSession] = useState<Question[] | null>(null);
+  const [index, setIndex] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [hintVisible, setHintVisible] = useState(false);
+  const [results, setResults] = useState<boolean[]>([]);
+  const [finished, setFinished] = useState(false);
+  const pool = useMemo(
+    () =>
+      lesson === "all"
+        ? discipline.questions
+        : discipline.questions.filter((question) => question.lesson === lesson),
+    [discipline.questions, lesson],
+  );
+  const practiced = pool.filter((question) => state.practice[question.id]).length;
+  const totals = pool.reduce(
+    (acc, question) => {
+      const item = state.practice[question.id];
+      return {
+        attempts: acc.attempts + (item?.attempts ?? 0),
+        correct: acc.correct + (item?.correct ?? 0),
+      };
+    },
+    { attempts: 0, correct: 0 },
+  );
+  const begin = () => {
+    const nextSeed = Date.now();
+    setSeed(nextSeed);
+    setSession(selectPractice(pool, state, 5, nextSeed));
+    setIndex(0);
+    setSelected(null);
+    setHintVisible(false);
+    setResults([]);
+    setFinished(false);
+  };
+  const q = session?.[index];
+  const optionData = useMemo(
+    () => (q ? shuffledOptions(q, seed + index * 53) : null),
+    [q, seed, index],
+  );
+  const answer = (choice: number) => {
+    if (!q || !optionData || selected !== null) return;
+    const correct = choice === optionData.correct;
+    setSelected(choice);
+    setResults((current) => [...current, correct]);
+    setState(savePractice(state, q.id, correct));
+  };
+  const next = () => {
+    if (!session) return;
+    if (index === session.length - 1) {
+      setFinished(true);
+      return;
+    }
+    setIndex((current) => current + 1);
+    setSelected(null);
+    setHintVisible(false);
+  };
+
+  if (finished && session) {
+    const score = results.filter(Boolean).length;
+    return (
+      <div className="mx-auto max-w-4xl">
+        <PageTitle
+          eyebrow={`${discipline.code} · prática concluída`}
+          title={`${score}/${session.length} resolvidos corretamente`}
+          description="A correção aconteceu durante os exercícios. Agora você pode praticar novamente ou voltar ao conteúdo."
+        />
+        <Card>
+          <CardContent className="grid gap-px bg-border p-0 sm:grid-cols-3">
+            <div className="bg-card p-6">
+              <p className="font-mono text-xs text-highlight">SESSÃO</p>
+              <p className="mt-3 text-3xl font-semibold">{session.length}</p>
+              <p className="text-sm text-muted-foreground">exercícios</p>
+            </div>
+            <div className="bg-card p-6">
+              <p className="font-mono text-xs text-highlight">ACERTOS</p>
+              <p className="mt-3 text-3xl font-semibold">{score}</p>
+              <p className="text-sm text-muted-foreground">com correção imediata</p>
+            </div>
+            <div className="bg-card p-6">
+              <p className="font-mono text-xs text-highlight">ESCOPO</p>
+              <p className="mt-3 text-lg font-semibold">
+                {lesson === "all" ? "Disciplina" : lesson}
+              </p>
+              <p className="text-sm text-muted-foreground">{discipline.short}</p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex-wrap justify-end gap-2 pt-5">
+            <Button variant="outline" onClick={() => go("lessons")}>
+              Voltar às aulas
+            </Button>
+            <Button onClick={begin}>
+              <RotateCcw data-icon="inline-start" />
+              Praticar novamente
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!session || !q || !optionData) {
+    const accuracy = totals.attempts
+      ? Math.round((totals.correct / totals.attempts) * 100)
+      : 0;
+    return (
+      <div className="mx-auto max-w-5xl">
+        <PageTitle
+          eyebrow={`${discipline.code} · aprender fazendo`}
+          title="Prática guiada"
+          description="Exercícios com dica opcional, correção imediata e explicação. Aqui errar faz parte do estudo; no simulado, a correção fica para o final."
+        />
+        <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+          <Card>
+            <CardHeader>
+              <CardTitle>Escolha o conteúdo</CardTitle>
+              <CardDescription>
+                Cada sessão traz cinco exercícios e prioriza os que você ainda não praticou.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <label className="text-sm font-medium" htmlFor="practice-lesson">
+                Aula ou disciplina completa
+              </label>
+              <select
+                id="practice-lesson"
+                value={lesson}
+                onChange={(event) => setLesson(event.target.value)}
+                className="mt-2 h-12 w-full rounded-md border border-border bg-background px-4 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+              >
+                <option value="all">Misturar toda a disciplina</option>
+                {discipline.lessons.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.id} · {item.title}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-5 rounded-lg border border-border bg-muted/40 p-5">
+                <p className="font-mono text-xs uppercase tracking-[.14em] text-highlight">
+                  Como funciona
+                </p>
+                <ul className="mt-4 grid gap-3 text-sm leading-6 text-muted-foreground">
+                  <li className="flex gap-3"><Lightbulb className="mt-1 size-4 shrink-0 text-highlight" />Use a dica somente quando precisar.</li>
+                  <li className="flex gap-3"><Check className="mt-1 size-4 shrink-0 text-highlight" />Receba a resposta e a explicação na hora.</li>
+                  <li className="flex gap-3"><RotateCcw className="mt-1 size-4 shrink-0 text-highlight" />Questões erradas continuam prioritárias.</li>
+                </ul>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button size="lg" className="w-full" onClick={begin}>
+                <Play data-icon="inline-start" />
+                Começar 5 exercícios
+              </Button>
+            </CardFooter>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Seu treino</CardTitle>
+              <CardDescription>{lesson === "all" ? discipline.name : lesson}</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-5">
+              <div>
+                <div className="flex items-end justify-between gap-3">
+                  <span className="text-sm text-muted-foreground">Já praticados</span>
+                  <span className="font-mono text-sm">{practiced}/{pool.length}</span>
+                </div>
+                <Progress className="mt-2" value={pool.length ? (practiced / pool.length) * 100 : 0} />
+              </div>
+              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-border bg-border">
+                <div className="bg-card p-4">
+                  <p className="text-2xl font-semibold">{totals.attempts}</p>
+                  <p className="text-xs text-muted-foreground">tentativas</p>
+                </div>
+                <div className="bg-card p-4">
+                  <p className="text-2xl font-semibold">{accuracy}%</p>
+                  <p className="text-xs text-muted-foreground">precisão</p>
+                </div>
+              </div>
+              <p className="text-sm leading-6 text-muted-foreground">
+                O banco completo desta matéria possui {discipline.questions.length} exercícios disponíveis para treino.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl">
+      <PageTitle
+        eyebrow={`${discipline.code} · prática guiada · ${q.lesson}`}
+        title="Resolva, confira e aprenda."
+        description="A resposta é corrigida imediatamente e não altera a nota dos seus simulados."
+      />
+      <div className="mb-5 flex items-center gap-4">
+        <Progress value={((index + 1) / session.length) * 100} />
+        <span className="shrink-0 font-mono text-xs text-muted-foreground">
+          {index + 1}/{session.length}
+        </span>
+      </div>
+      <Card>
+        <CardHeader className="border-b border-border">
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Tag>{q.lesson}</Tag><Tag>{q.topic}</Tag><Tag>{q.kind}</Tag>
+          </div>
+          <CardTitle className="text-xl leading-8 sm:text-2xl">{q.prompt}</CardTitle>
+        </CardHeader>
+        {q.visual && (
+          <div className="border-b border-border px-5 py-5">
+            <QuestionVisualPanel visual={q.visual} />
+          </div>
+        )}
+        <CardContent className="pt-5">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={selected !== null}
+            onClick={() => setHintVisible((value) => !value)}
+          >
+            <Lightbulb data-icon="inline-start" />
+            {hintVisible ? "Ocultar dica" : "Ver uma dica"}
+          </Button>
+          {hintVisible && selected === null && (
+            <p className="mt-3 rounded-md border border-primary/30 bg-primary/10 p-4 text-sm leading-6 text-muted-foreground">
+              {practiceHint(q.kind)}
+            </p>
+          )}
+          <fieldset className="mt-5 flex flex-col gap-3">
+            <legend className="sr-only">Alternativas</legend>
+            {optionData.options.map((option, optionIndex) => {
+              const correctOption = selected !== null && optionIndex === optionData.correct;
+              const wrongSelection = selected === optionIndex && optionIndex !== optionData.correct;
+              return (
+                <button
+                  key={option.index}
+                  disabled={selected !== null}
+                  onClick={() => answer(optionIndex)}
+                  className={cn(
+                    "flex min-h-14 items-center gap-4 rounded-md border p-4 text-left text-sm leading-6 transition disabled:cursor-default",
+                    correctOption
+                      ? "border-emerald-500/60 bg-emerald-500/10 text-foreground"
+                      : wrongSelection
+                        ? "border-red-500/60 bg-red-500/10 text-foreground"
+                        : "border-border bg-background/40 text-muted-foreground hover:border-ring hover:text-foreground",
+                  )}
+                >
+                  <span className="grid size-7 shrink-0 place-items-center rounded border border-border font-mono text-xs">
+                    {String.fromCharCode(65 + optionIndex)}
+                  </span>
+                  {option.text}
+                </button>
+              );
+            })}
+          </fieldset>
+          {selected !== null && (
+            <div className={cn("mt-5 rounded-lg border p-5", selected === optionData.correct ? "border-emerald-500/40 bg-emerald-500/10" : "border-red-500/40 bg-red-500/10")}>
+              <p className="font-semibold">
+                {selected === optionData.correct ? "Acertou." : "Ainda não — e é exatamente por isso que este modo existe."}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{q.explanation}</p>
+              <p className="mt-3 font-mono text-[11px] text-highlight">Fonte: {q.source}</p>
+              <QuestionReference question={q} />
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="justify-end border-t border-border pt-5">
+          <Button disabled={selected === null} onClick={next}>
+            {index === session.length - 1 ? "Concluir prática" : "Próximo exercício"}
+            <ChevronRight data-icon="inline-end" />
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

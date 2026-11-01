@@ -40,7 +40,7 @@ it("corrige exatamente as dez questões mostradas e preserva a disciplina no his
   await screen.findByRole("heading", { name: "Aulas e assuntos" });
   fireEvent.click(screen.getAllByRole("button", { name: "Estudar aula" })[0]);
   fireEvent.click(
-    await screen.findByRole("button", { name: "Praticar esta aula" }),
+    await screen.findByRole("button", { name: "Simulado da aula" }),
   );
   await screen.findByRole("heading", { name: "10 questões. Uma tentativa." });
   const shown: string[] = [];
@@ -93,7 +93,7 @@ it("abre Algoritmos com conteúdo próprio e pratica somente a aula escolhida", 
   expect(
     await screen.findByRole("heading", { name: "O percurso da disciplina" }),
   ).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Praticar esta aula" }));
+  fireEvent.click(screen.getByRole("button", { name: "Simulado da aula" }));
   await screen.findByRole("heading", { name: "10 questões. Uma tentativa." });
   expect(
     algorithmsQuestionBank.some((q) =>
@@ -116,14 +116,43 @@ it("abre Design Profissional com conteúdo próprio e simulado restrito à aula"
   fireEvent.click(screen.getAllByRole("button", { name: "Estudar aula" })[0]);
   expect(await screen.findByRole("heading", { name: "Carreiras em tecnologia" })).toBeTruthy();
   expect(await screen.findByRole("heading", { name: "Um mercado plural" })).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Praticar esta aula" }));
+  fireEvent.click(screen.getByRole("button", { name: "Simulado da aula" }));
   await screen.findByRole("heading", { name: "10 questões. Uma tentativa." });
   expect(
-    designQuestionBank.some((q) => screen.queryByText(q.prompt, { exact: true })),
+    designQuestionBank.some((q) => screen.queryAllByText(q.prompt, { exact: true }).length > 0),
   ).toBe(true);
   expect(
     designQuestionBank
-      .filter((q) => screen.queryByText(q.prompt, { exact: true }))
+      .filter((q) => screen.queryAllByText(q.prompt, { exact: true }).length > 0)
       .every((q) => q.lesson === "Aula 01"),
   ).toBe(true);
+});
+
+it("oferece prática guiada com dica, correção imediata e progresso local", async () => {
+  window.scrollTo = () => {};
+  render(<App />);
+  fireEvent.click(screen.getAllByRole("button", { name: "Abrir disciplina" })[1]);
+  await screen.findByRole("heading", { name: "Aulas e assuntos" });
+  fireEvent.click(screen.getByRole("button", { name: "Prática" }));
+  await screen.findByRole("heading", { name: "Prática guiada" });
+  fireEvent.change(screen.getByLabelText("Aula ou disciplina completa"), {
+    target: { value: "Aula 01" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Começar 5 exercícios" }));
+  await screen.findByRole("heading", { name: "Resolva, confira e aprenda." });
+  fireEvent.click(screen.getByRole("button", { name: "Ver uma dica" }));
+  expect(screen.getByText(/Procure a alternativa|Separe o caso|Simule a execução|Compare o requisito/)).toBeTruthy();
+  const current = frontendQuestionBank.find((question) =>
+    screen.queryByText(question.prompt, { exact: true }),
+  );
+  expect(current?.lesson).toBe("Aula 01");
+  const options = within(screen.getByRole("group", { name: "Alternativas" })).getAllByRole("button");
+  const correct = options.find(
+    (button) => button.textContent?.slice(1) === current!.options[current!.correct],
+  );
+  fireEvent.click(correct!);
+  expect(await screen.findByText("Acertou.")).toBeTruthy();
+  const saved = JSON.parse(localStorage.getItem("schema-progress-v1")!);
+  expect(saved.practice[current!.id]).toEqual({ attempts: 1, correct: 1 });
+  expect(screen.getByRole("button", { name: "Próximo exercício" })).toBeTruthy();
 });

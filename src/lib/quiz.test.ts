@@ -9,6 +9,7 @@ import { algorithmsLessonContents } from "@/data/algorithms-lesson-content";
 import { designQuestionBank } from "@/data/design-question-bank";
 import { designLessonContents } from "@/data/design-lesson-content";
 import type { Question } from "@/types";
+import { practiceHint, selectPractice } from "./practice";
 const bank = Array.from({ length: 30 }, (_, i) => ({
   id: String(i),
   lesson: "Aula",
@@ -27,10 +28,25 @@ const bank = Array.from({ length: 30 }, (_, i) => ({
   source: "x",
 }));
 describe("quiz", () => {
+  it("prioriza exercícios ainda não praticados e mantém famílias distintas", () => {
+    const practiced = Object.fromEntries(
+      bank.slice(0, 10).map((question) => [question.id, { attempts: 2, correct: 1 }]),
+    );
+    const exercises = selectPractice(
+      bank,
+      { answered: {}, attempts: [], studied: {}, practice: practiced },
+      5,
+      42,
+    );
+    expect(exercises).toHaveLength(5);
+    expect(exercises.every((question) => !practiced[question.id])).toBe(true);
+    expect(new Set(exercises.map(questionFamily)).size).toBe(5);
+    expect(practiceHint("código")).toContain("linha por linha");
+  });
   it("seleciona exatamente dez e equilibra dificuldade", () => {
     const q = selectQuiz(
       bank,
-      { answered: {}, attempts: [], studied: {} },
+      { answered: {}, attempts: [], studied: {}, practice: {} },
       10,
       1,
     );
@@ -48,7 +64,7 @@ describe("quiz", () => {
       const pool = questionBank.filter((q) => q.lesson === lesson.id);
       const quiz = selectQuiz(
         pool,
-        { answered: {}, attempts: [], studied: {} },
+        { answered: {}, attempts: [], studied: {}, practice: {} },
         10,
         42,
       );
@@ -65,7 +81,7 @@ describe("quiz", () => {
       const pool = frontendQuestionBank.filter((q) => q.lesson === lesson.id);
       const quiz = selectQuiz(
         pool,
-        { answered: {}, attempts: [], studied: {} },
+        { answered: {}, attempts: [], studied: {}, practice: {} },
         10,
         84,
       );
@@ -113,7 +129,7 @@ describe("quiz", () => {
     for (const lesson of algorithmsLessonContents) {
       const pool = algorithmsQuestionBank.filter((q) => q.lesson === lesson.id);
       for (let seed = 1; seed <= 50; seed++) {
-        const quiz = selectQuiz(pool, { answered: {}, attempts: [], studied: {} }, 10, seed);
+        const quiz = selectQuiz(pool, { answered: {}, attempts: [], studied: {}, practice: {} }, 10, seed);
         expect(quiz).toHaveLength(10);
         expect(quiz.every((q) => q.lesson === lesson.id), lesson.id).toBe(true);
         expect(quiz.filter((q) => q.difficulty === "fácil"), lesson.id).toHaveLength(3);
@@ -146,7 +162,7 @@ describe("quiz", () => {
       expect(pool.filter((q) => q.difficulty === "média"), lesson.id).toHaveLength(6);
       expect(pool.filter((q) => q.difficulty === "difícil"), lesson.id).toHaveLength(3);
       for (let seed = 1; seed <= 50; seed++) {
-        const quiz = selectQuiz(pool, { answered: {}, attempts: [], studied: {} }, 10, seed);
+        const quiz = selectQuiz(pool, { answered: {}, attempts: [], studied: {}, practice: {} }, 10, seed);
         expect(quiz).toHaveLength(10);
         expect(quiz.every((q) => q.lesson === lesson.id), lesson.id).toBe(true);
         expect(quiz.filter((q) => q.difficulty === "fácil"), lesson.id).toHaveLength(3);
@@ -199,7 +215,7 @@ describe("quiz", () => {
       for (let seed = 1; seed <= 100; seed++) {
         const quiz = selectQuiz(
           pool,
-          { answered: {}, attempts: [], studied: {} },
+          { answered: {}, attempts: [], studied: {}, practice: {} },
           10,
           seed,
         );
@@ -223,7 +239,7 @@ describe("quiz", () => {
       familyId: "same",
     }));
     expect(() =>
-      selectQuiz(variants, { answered: {}, attempts: [], studied: {} }, 10, 1),
+      selectQuiz(variants, { answered: {}, attempts: [], studied: {}, practice: {} }, 10, 1),
     ).toThrow("Banco insuficiente");
   });
   it("prioriza perguntas ainda não respondidas dentro da mesma dificuldade", () => {
@@ -233,6 +249,7 @@ describe("quiz", () => {
       answered: { [old.id]: { attempts: 2, correct: 1, lastSelected: 0 } },
       attempts: [],
       studied: {},
+      practice: {},
     };
     const quiz = selectQuiz(pool, state, 10, 1);
     expect(quiz.some((q) => q.id === old.id)).toBe(false);
