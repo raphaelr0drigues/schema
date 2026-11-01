@@ -137,7 +137,7 @@ export function App() {
           toggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
         />
         <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
-          <AnimatePresence mode="wait">
+          <>
             <motion.div
               key={`${view}-${disciplineId}-${selectedLesson}-${quizLesson ?? "geral"}-${practiceLesson ?? "geral"}`}
               initial={{ opacity: 0, y: 8 }}
@@ -201,7 +201,7 @@ export function App() {
                 />
               )}
             </motion.div>
-          </AnimatePresence>
+          </>
         </div>
       </main>
     </div>
